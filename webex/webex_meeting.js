@@ -1,7 +1,21 @@
 // WebEx Meeting JavaScript
+// Version: 1.0.0
+const APP_VERSION = '1.0.0';
+const BUILD_DATE = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+// Make version accessible globally for debugging
+if (typeof window !== 'undefined') {
+    window.WEBEX_MEETING_VERSION = APP_VERSION;
+    window.WEBEX_MEETING_BUILD_DATE = BUILD_DATE;
+    console.log('[WebEx] Application Version:', APP_VERSION);
+    console.log('[WebEx] Build Date:', BUILD_DATE);
+}
+
 class WebExMeeting {
     constructor() {
         console.log('[WebEx] Initializing WebEx Meeting class');
+        console.log('[WebEx] Build Version:', APP_VERSION);
+        console.log('[WebEx] Build Date:', BUILD_DATE);
         this.meetingId = null;
         this.token = null;
         this.localStream = null;
@@ -24,6 +38,11 @@ class WebExMeeting {
 
     async init() {
         console.log('[WebEx] Starting initialization');
+        console.log('[WebEx] Build Version:', APP_VERSION);
+        console.log('[WebEx] Build Date:', BUILD_DATE);
+        
+        // Display version in UI
+        this.displayVersion();
         
         // Parse URL parameters
         console.log('[WebEx] Parsing URL parameters');
@@ -993,6 +1012,15 @@ class WebExMeeting {
         console.log('[WebEx] Hiding loading overlay');
         const loadingOverlay = document.getElementById('loadingOverlay');
         loadingOverlay.classList.add('hidden');
+    }
+
+    displayVersion() {
+        const versionDisplay = document.getElementById('versionDisplay');
+        if (versionDisplay) {
+            versionDisplay.textContent = `v${APP_VERSION}`;
+            versionDisplay.title = `Build Date: ${BUILD_DATE}`;
+            console.log('[WebEx] Version displayed in UI:', APP_VERSION);
+        }
     }
 
     escapeHtml(text) {
