@@ -1,0 +1,707 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    background: #1a1a1a;
+    color: #ffffff;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Meeting Container */
+.meeting-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: relative;
+    background: #0f0f0f;
+}
+
+/* Video Grid */
+.video-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+    overflow: hidden;
+}
+
+/* Main Video Container */
+.main-video-container {
+    position: relative;
+    flex: 1;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.main-video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #1a1a1a;
+}
+
+/* Video Overlay */
+.video-overlay {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 6px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.participant-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.video-status {
+    display: flex;
+    gap: 6px;
+}
+
+.status-indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-indicator.audio-on {
+    background: #22c55e;
+}
+
+.status-indicator.audio-off {
+    background: #ef4444;
+}
+
+.status-indicator.video-on {
+    background: #22c55e;
+}
+
+.status-indicator.video-off {
+    background: #ef4444;
+}
+
+/* Screen Share Indicator */
+.screen-share-indicator {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(59, 130, 246, 0.9);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Remote Videos */
+.remote-videos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    max-height: 180px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.remote-video-container {
+    position: relative;
+    background: #000;
+    border-radius: 6px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    min-width: 150px;
+}
+
+.remote-video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Control Bar */
+.control-bar {
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Control Buttons */
+.control-btn {
+    background: rgba(60, 60, 60, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    color: #ffffff;
+}
+
+.control-btn:hover {
+    background: rgba(80, 80, 80, 0.9);
+    transform: translateY(-2px);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+}
+
+.control-btn.active {
+    background: #ef4444;
+}
+
+.control-btn.active:hover {
+    background: #dc2626;
+}
+
+.control-btn.leave-btn {
+    background: #ef4444;
+}
+
+.control-btn.leave-btn:hover {
+    background: #dc2626;
+}
+
+.icon {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+.control-label {
+    font-size: 10px;
+    margin-top: 4px;
+    display: none;
+}
+
+.participant-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #3b82f6;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* Meeting Info */
+.meeting-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.meeting-id {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.meeting-timer {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Side Panels */
+.side-panel {
+    position: fixed;
+    right: -400px;
+    top: 0;
+    width: 400px;
+    height: 100vh;
+    background: rgba(30, 30, 30, 0.98);
+    backdrop-filter: blur(10px);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
+    transition: right 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.side-panel.open {
+    right: 0;
+}
+
+.panel-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 32px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* Participant List */
+.participant-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.participant-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(60, 60, 60, 0.5);
+    border-radius: 8px;
+}
+
+.participant-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.participant-info {
+    flex: 1;
+}
+
+.participant-info .name {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.participant-info .status {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.participant-badges {
+    display: flex;
+    gap: 6px;
+}
+
+.badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.badge.audio-on {
+    background: #22c55e;
+}
+
+.badge.audio-off {
+    background: #ef4444;
+}
+
+.badge.video-on {
+    background: #22c55e;
+}
+
+.badge.video-off {
+    background: #9ca3af;
+}
+
+/* Chat */
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+.chat-message {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.chat-message .sender {
+    font-size: 12px;
+    font-weight: 600;
+    color: #3b82f6;
+}
+
+.chat-message .message {
+    background: rgba(60, 60, 60, 0.6);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.chat-message .timestamp {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    bottom: 0;
+    background: rgba(30, 30, 30, 0.98);
+}
+
+.chat-input-container input {
+    flex: 1;
+    background: rgba(60, 60, 60, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #ffffff;
+    font-size: 14px;
+}
+
+.chat-input-container input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.chat-input-container button {
+    background: #3b82f6;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chat-input-container button:hover {
+    background: #2563eb;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    gap: 20px;
+}
+
+.loading-overlay.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+    font-size: 16px;
+    color: #9ca3af;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+}
+
+.modal-content {
+    background: #1e1e1e;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal-content h3 {
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.modal-content p {
+    font-size: 14px;
+    color: #9ca3af;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.modal-content button {
+    background: #3b82f6;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: 100%;
+}
+
+.modal-content button:hover {
+    background: #2563eb;
+}
+
+/* Responsive Design - Tablet */
+@media (max-width: 1024px) {
+    .side-panel {
+        width: 350px;
+        right: -350px;
+    }
+
+    .control-btn {
+        width: 52px;
+        height: 52px;
+    }
+
+    .icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    .remote-videos {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        max-height: 150px;
+    }
+}
+
+/* Responsive Design - Mobile */
+@media (max-width: 768px) {
+    .video-grid {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .control-bar {
+        padding: 12px 8px;
+        flex-wrap: wrap;
+    }
+
+    .control-group {
+        gap: 8px;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .control-btn {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 auto;
+    }
+
+    .icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .control-label {
+        display: none;
+    }
+
+    .meeting-info {
+        width: 100%;
+        align-items: center;
+        margin-top: 8px;
+        order: -1;
+    }
+
+    .side-panel {
+        width: 100vw;
+        right: -100vw;
+    }
+
+    .remote-videos {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        max-height: 120px;
+    }
+
+    .video-overlay {
+        padding: 4px 8px;
+        bottom: 8px;
+        left: 8px;
+    }
+
+    .participant-name {
+        font-size: 12px;
+    }
+
+    .status-indicator {
+        width: 14px;
+        height: 14px;
+    }
+
+    .modal-content {
+        padding: 24px;
+    }
+}
+
+/* Responsive Design - Small Mobile */
+@media (max-width: 480px) {
+    .control-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .participant-count {
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+    }
+
+    .remote-videos {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        max-height: 100px;
+    }
+
+    .panel-header {
+        padding: 16px;
+    }
+
+    .panel-content {
+        padding: 16px;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Landscape Mode for Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .remote-videos {
+        max-height: 100px;
+    }
+
+    .control-bar {
+        padding: 8px;
+    }
+
+    .control-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .icon {
+        width: 16px;
+        height: 16px;
+    }
+}
