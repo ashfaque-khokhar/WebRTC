@@ -13,6 +13,11 @@ class WebExMeeting {
         this.isScreenSharing = false;
         this.meetingStartTime = null;
         this.timerInterval = null;
+        
+        // Webex SDK instances
+        this.webex = null;
+        this.meeting = null;
+        this.meetingMembers = new Map();
 
         this.init();
     }
@@ -206,9 +211,9 @@ class WebExMeeting {
             console.log('[WebEx] Initializing participants list');
             this.updateParticipantsList();
 
-            // Simulate connection (In real implementation, this would connect to WebEx API)
-            console.log('[WebEx] Simulating WebEx connection');
-            this.simulateConnection();
+            // Connect to WebEx meeting using actual SDK
+            console.log('[WebEx] Connecting to WebEx meeting');
+            await this.connectToWebexMeeting();
 
         } catch (error) {
             console.error('[WebEx] ✗ Error requesting permissions:', error);
@@ -226,7 +231,7 @@ class WebExMeeting {
         }
     }
 
-    toggleAudio() {
+    async toggleAudio() {
         console.log('[WebEx] Toggle audio clicked');
         if (!this.localStream) {
             console.warn('[WebEx] No local stream available');
@@ -237,6 +242,18 @@ class WebExMeeting {
         if (audioTrack) {
             this.isAudioEnabled = !this.isAudioEnabled;
             audioTrack.enabled = this.isAudioEnabled;
+            
+            // Update Webex meeting media
+            if (this.meeting) {
+                try {
+                    await this.meeting.updateMedia({
+                        sendAudio: this.isAudioEnabled
+                    });
+                    console.log('[WebEx] Webex meeting audio updated:', this.isAudioEnabled);
+                } catch (error) {
+                    console.error('[WebEx] Error updating audio in meeting:', error);
+                }
+            }
             
             console.log('[WebEx] Audio toggled:', this.isAudioEnabled ? 'ON' : 'OFF (Muted)');
             
@@ -264,7 +281,7 @@ class WebExMeeting {
         }
     }
 
-    toggleVideo() {
+    async toggleVideo() {
         console.log('[WebEx] Toggle video clicked');
         if (!this.localStream) {
             console.warn('[WebEx] No local stream available');
@@ -275,6 +292,18 @@ class WebExMeeting {
         if (videoTrack) {
             this.isVideoEnabled = !this.isVideoEnabled;
             videoTrack.enabled = this.isVideoEnabled;
+            
+            // Update Webex meeting media
+            if (this.meeting) {
+                try {
+                    await this.meeting.updateMedia({
+                        sendVideo: this.isVideoEnabled
+                    });
+                    console.log('[WebEx] Webex meeting video updated:', this.isVideoEnabled);
+                } catch (error) {
+                    console.error('[WebEx] Error updating video in meeting:', error);
+                }
+            }
             
             console.log('[WebEx] Video toggled:', this.isVideoEnabled ? 'ON' : 'OFF');
             
@@ -329,6 +358,18 @@ class WebExMeeting {
                     localVideo.srcObject = this.screenStream;
                 }
 
+                // Share screen via Webex SDK
+                if (this.meeting) {
+                    try {
+                        await this.meeting.startShare({
+                            stream: this.screenStream
+                        });
+                        console.log('[WebEx] ✓ Screen share started in Webex meeting');
+                    } catch (error) {
+                        console.error('[WebEx] Error starting screen share in meeting:', error);
+                    }
+                }
+
                 // Update UI
                 const shareBtn = document.getElementById('shareBtn');
                 shareBtn.classList.add('active');
@@ -359,8 +400,19 @@ class WebExMeeting {
         }
     }
 
-    stopScreenShare() {
+    async stopScreenShare() {
         console.log('[WebEx] Stopping screen share');
+        
+        // Stop screen share in Webex meeting
+        if (this.meeting) {
+            try {
+                await this.meeting.stopShare();
+                console.log('[WebEx] ✓ Screen share stopped in Webex meeting');
+            } catch (error) {
+                console.error('[WebEx] Error stopping screen share in meeting:', error);
+            }
+        }
+        
         if (this.screenStream) {
             this.screenStream.getTracks().forEach(track => {
                 track.stop();
@@ -432,7 +484,7 @@ class WebExMeeting {
         panel.classList.remove('open');
     }
 
-    sendChatMessage() {
+    async sendChatMessage() {
         console.log('[WebEx] Send chat message clicked');
         const input = document.getElementById('chatInput');
         const message = input.value.trim();
@@ -442,16 +494,31 @@ class WebExMeeting {
             return;
         }
 
-        console.log('[WebEx] Sending message:', message);
+        if (!this.meeting) {
+            console.warn('[WebEx] No meeting instance, cannot send message');
+            this.showError('Not connected to meeting');
+            return;
+        }
 
-        // Add message to chat
-        this.addChatMessage('You', message);
+        try {
+            console.log('[WebEx] Sending message via Webex:', message);
 
-        // Clear input
-        input.value = '';
+            // Send message via Webex SDK
+            await this.meeting.sendMessage({
+                text: message
+            });
 
-        // In real implementation, this would send the message via WebEx API
-        console.log('[WebEx] ✓ Message sent successfully');
+            // Add message to chat UI
+            this.addChatMessage('You', message);
+
+            // Clear input
+            input.value = '';
+
+            console.log('[WebEx] ✓ Message sent successfully');
+        } catch (error) {
+            console.error('[WebEx] ✗ Error sending message:', error);
+            this.showError('Failed to send message: ' + error.message);
+        }
     }
 
     addChatMessage(sender, message) {
@@ -559,25 +626,229 @@ class WebExMeeting {
         }, 1000);
     }
 
-    simulateConnection() {
-        console.log('[WebEx] Simulating connection to WebEx servers');
-        // Simulate adding remote participants (for demo purposes)
-        // In real implementation, this would be handled by WebEx SDK
+    async connectToWebexMeeting() {
+        try {
+            console.log('[WebEx] Initializing Webex SDK');
+            
+            // Initialize Webex SDK
+            this.webex = window.Webex.init({
+                config: {
+                    meetings: {
+                        deviceType: 'WEB'
+                    }
+                },
+                credentials: {
+                    access_token: this.token
+                }
+            });
 
-        setTimeout(() => {
-            console.log('[WebEx] Simulating participant joining (2s delay)');
-            this.addRemoteParticipant('participant1', 'John Doe', true, true);
-        }, 2000);
+            console.log('[WebEx] Webex SDK initialized');
 
-        setTimeout(() => {
-            console.log('[WebEx] Simulating another participant joining (4s delay)');
-            this.addRemoteParticipant('participant2', 'Jane Smith', true, false);
-        }, 4000);
+            // Create meeting instance
+            console.log('[WebEx] Creating meeting instance for meeting ID:', this.meetingId);
+            this.meeting = this.webex.meetings.create(this.meetingId);
 
-        setTimeout(() => {
-            console.log('[WebEx] Simulating incoming chat message (5s delay)');
-            this.addChatMessage('John Doe', 'Hello everyone!');
-        }, 5000);
+            // Register meeting event listeners
+            this.registerMeetingEvents();
+
+            // Join the meeting
+            console.log('[WebEx] Joining meeting...');
+            await this.meeting.join();
+            console.log('[WebEx] ✓ Successfully joined meeting');
+
+            // Publish local media
+            if (this.localStream) {
+                console.log('[WebEx] Publishing local media stream');
+                await this.meeting.addMedia({
+                    localStream: this.localStream,
+                    mediaSettings: {
+                        receiveVideo: true,
+                        receiveAudio: true,
+                        receiveShare: true,
+                        sendVideo: this.isVideoEnabled,
+                        sendAudio: this.isAudioEnabled
+                    }
+                });
+                console.log('[WebEx] ✓ Local media published');
+            }
+
+        } catch (error) {
+            console.error('[WebEx] ✗ Error connecting to Webex meeting:', error);
+            this.showError('Failed to connect to meeting: ' + error.message);
+        }
+    }
+
+    registerMeetingEvents() {
+        console.log('[WebEx] Registering meeting event listeners');
+
+        // Participant joined
+        this.meeting.on('members:added', (member) => {
+            console.log('[WebEx] Participant joined:', member);
+            this.handleParticipantJoined(member);
+        });
+
+        // Participant left
+        this.meeting.on('members:removed', (member) => {
+            console.log('[WebEx] Participant left:', member);
+            this.handleParticipantLeft(member);
+        });
+
+        // Media streams added
+        this.meeting.on('media:ready', (media) => {
+            console.log('[WebEx] Media ready:', media);
+            this.handleMediaReady(media);
+        });
+
+        // Remote media streams
+        this.meeting.on('media:stream:started', (stream) => {
+            console.log('[WebEx] Remote stream started:', stream);
+            this.handleRemoteStream(stream);
+        });
+
+        // Remote media streams stopped
+        this.meeting.on('media:stream:stopped', (stream) => {
+            console.log('[WebEx] Remote stream stopped:', stream);
+            this.handleRemoteStreamStopped(stream);
+        });
+
+        // Participant media status changed
+        this.meeting.on('members:media:changed', (member) => {
+            console.log('[WebEx] Participant media changed:', member);
+            this.handleParticipantMediaChanged(member);
+        });
+
+        // Chat messages
+        this.meeting.on('messages:created', (message) => {
+            console.log('[WebEx] Chat message received:', message);
+            this.handleChatMessage(message);
+        });
+
+        // Meeting error
+        this.meeting.on('error', (error) => {
+            console.error('[WebEx] Meeting error:', error);
+            this.showError('Meeting error: ' + error.message);
+        });
+
+        console.log('[WebEx] ✓ Meeting event listeners registered');
+    }
+
+    handleParticipantJoined(member) {
+        const participantId = member.id;
+        const participantName = member.displayName || member.name || `Participant ${participantId}`;
+        
+        console.log('[WebEx] Adding participant:', participantName, 'ID:', participantId);
+        
+        this.meetingMembers.set(participantId, member);
+        
+        this.addRemoteParticipant(
+            participantId,
+            participantName,
+            member.audio?.muted === false,
+            member.video?.muted === false
+        );
+    }
+
+    handleParticipantLeft(member) {
+        const participantId = member.id;
+        console.log('[WebEx] Removing participant:', participantId);
+        this.removeRemoteParticipant(participantId);
+        this.meetingMembers.delete(participantId);
+    }
+
+    handleMediaReady(media) {
+        console.log('[WebEx] Media ready event:', media);
+        // Media is ready, streams will be handled by stream events
+    }
+
+    handleRemoteStream(stream) {
+        console.log('[WebEx] Handling remote stream:', stream);
+        
+        if (!stream || !stream.participant) {
+            console.warn('[WebEx] Invalid stream data');
+            return;
+        }
+
+        const participantId = stream.participant.id;
+        const streamType = stream.type; // 'video', 'audio', 'screen'
+
+        console.log('[WebEx] Remote stream type:', streamType, 'from participant:', participantId);
+
+        if (streamType === 'video' || streamType === 'screen') {
+            const videoContainer = document.getElementById(`remote-${participantId}`);
+            if (videoContainer) {
+                const videoElement = videoContainer.querySelector('video');
+                if (videoElement && stream.stream) {
+                    videoElement.srcObject = stream.stream;
+                    console.log('[WebEx] ✓ Remote video stream attached');
+                }
+            } else {
+                // Create video container if it doesn't exist
+                const member = this.meetingMembers.get(participantId);
+                if (member) {
+                    const name = member.displayName || member.name || `Participant ${participantId}`;
+                    this.addRemoteParticipant(participantId, name, true, true);
+                    // Retry attaching stream
+                    setTimeout(() => {
+                        const newContainer = document.getElementById(`remote-${participantId}`);
+                        if (newContainer) {
+                            const videoElement = newContainer.querySelector('video');
+                            if (videoElement && stream.stream) {
+                                videoElement.srcObject = stream.stream;
+                            }
+                        }
+                    }, 100);
+                }
+            }
+        }
+    }
+
+    handleRemoteStreamStopped(stream) {
+        console.log('[WebEx] Remote stream stopped:', stream);
+        if (stream && stream.participant) {
+            const participantId = stream.participant.id;
+            const videoContainer = document.getElementById(`remote-${participantId}`);
+            if (videoContainer) {
+                const videoElement = videoContainer.querySelector('video');
+                if (videoElement) {
+                    videoElement.srcObject = null;
+                }
+            }
+        }
+    }
+
+    handleParticipantMediaChanged(member) {
+        console.log('[WebEx] Participant media changed:', member);
+        const participantId = member.id;
+        const participant = this.participants.get(participantId);
+        
+        if (participant) {
+            participant.isAudioEnabled = member.audio?.muted === false;
+            participant.isVideoEnabled = member.video?.muted === false;
+            this.updateParticipantsList();
+            
+            // Update video container status indicators
+            const videoContainer = document.getElementById(`remote-${participantId}`);
+            if (videoContainer) {
+                const audioStatus = videoContainer.querySelector('.status-indicator.audio-on, .status-indicator.audio-off');
+                const videoStatus = videoContainer.querySelector('.status-indicator.video-on, .status-indicator.video-off');
+                
+                if (audioStatus) {
+                    audioStatus.className = `status-indicator ${participant.isAudioEnabled ? 'audio-on' : 'audio-off'}`;
+                }
+                if (videoStatus) {
+                    videoStatus.className = `status-indicator ${participant.isVideoEnabled ? 'video-on' : 'video-off'}`;
+                }
+            }
+        }
+    }
+
+    handleChatMessage(message) {
+        console.log('[WebEx] Handling chat message:', message);
+        
+        if (message && message.text) {
+            const senderName = message.personDisplayName || message.personEmail || 'Unknown';
+            this.addChatMessage(senderName, message.text);
+        }
     }
 
     addRemoteParticipant(id, name, isAudioEnabled, isVideoEnabled) {
@@ -634,6 +905,24 @@ class WebExMeeting {
     async leaveMeeting() {
         console.log('[WebEx] Leave meeting initiated');
         
+        try {
+            // Leave Webex meeting
+            if (this.meeting) {
+                console.log('[WebEx] Leaving Webex meeting');
+                await this.meeting.leave();
+                this.meeting = null;
+            }
+
+            // Disconnect Webex SDK
+            if (this.webex) {
+                console.log('[WebEx] Disconnecting Webex SDK');
+                await this.webex.logout();
+                this.webex = null;
+            }
+        } catch (error) {
+            console.error('[WebEx] Error leaving meeting:', error);
+        }
+        
         // Stop all tracks
         if (this.localStream) {
             console.log('[WebEx] Stopping local media tracks');
@@ -662,6 +951,10 @@ class WebExMeeting {
         this.peerConnections.forEach(pc => pc.close());
         this.peerConnections.clear();
 
+        // Clear meeting members
+        this.meetingMembers.clear();
+        this.participants.clear();
+
         // Show goodbye message
         const loadingOverlay = document.getElementById('loadingOverlay');
         loadingOverlay.classList.remove('hidden');
@@ -670,7 +963,6 @@ class WebExMeeting {
             <p>You have left the meeting</p>
         `;
 
-        // In real implementation, this would disconnect from WebEx API
         console.log('[WebEx] ✓ Left meeting successfully');
 
         // Close window after delay (or redirect)
