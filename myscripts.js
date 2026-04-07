@@ -36,7 +36,10 @@ class PeerApp {
             disconnectBtn: document.getElementById('disconnectBtn'),
             chatInputContainer: document.querySelector('.chat-input-container'),
             newPeerId: document.getElementById('newPeerId'),
-            typingIndicator: document.getElementById('typingIndicator')
+            typingIndicator: document.getElementById('typingIndicator'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            statusIndicator: document.getElementById('statusIndicator'),
+            statusText: document.getElementById('statusText')
         };
 
         // App state
@@ -52,7 +55,10 @@ class PeerApp {
             typingTimeout: null,
             messageCounter: 0,
             pendingMessages: new Map(),
-            deliveryTimeouts: new Map()
+            deliveryTimeouts: new Map(),
+            pingInterval: null,
+            pongTimeout: null,
+            lastPongReceived: null
         };
 
         this.init();
@@ -240,6 +246,7 @@ class PeerApp {
             console.log('[Chat] Data connection opened.');
             console.log('User is online and connected');
             this.setConnectedUI(true);
+            this.startHeartbeat();
         });
 
         conn.on('data', data => {
@@ -257,6 +264,10 @@ class PeerApp {
             } else if (data.type === 'delivered') {
                 console.log('Message delivered');
                 this.updateMessageDeliveryStatus(data.id);
+            } else if (data.type === 'ping') {
+                conn.send({ type: 'pong' });
+            } else if (data.type === 'pong') {
+                this.handlePongReceived();
             } else {
                 const decodedMsg = decodeBase64(data);
                 this.appendChatMessage('Peer', decodedMsg);
@@ -265,6 +276,7 @@ class PeerApp {
 
         conn.on('close', () => {
             console.log('User disconnected');
+            this.stopHeartbeat();
             this.appendChatMessage('System', 'Chat ended.');
             this.updateConnectedPeers(peerId, false);
             this.setConnectedUI(false);
@@ -404,6 +416,58 @@ class PeerApp {
                 type: 'typing',
                 user: this.state.myPeerId
             });
+        }
+    }
+
+    startHeartbeat() {
+        this.updateConnectionStatus('online');
+        this.state.lastPongReceived = Date.now();
+        
+        this.state.pingInterval = setInterval(() => {
+            if (this.state.currentChatConn && this.state.currentChatConn.open) {
+                this.state.currentChatConn.send({ type: 'ping' });
+                
+                this.state.pongTimeout = setTimeout(() => {
+                    const timeSinceLastPong = Date.now() - this.state.lastPongReceived;
+                    if (timeSinceLastPong > 10000) {
+                        console.log('Connection lost - no pong received');
+                        this.updateConnectionStatus('offline');
+                        this.appendChatMessage('System', 'Connection lost - User appears offline');
+                    }
+                }, 10000);
+            }
+        }, 5000);
+    }
+
+    stopHeartbeat() {
+        if (this.state.pingInterval) {
+            clearInterval(this.state.pingInterval);
+            this.state.pingInterval = null;
+        }
+        if (this.state.pongTimeout) {
+            clearTimeout(this.state.pongTimeout);
+            this.state.pongTimeout = null;
+        }
+        this.updateConnectionStatus('offline');
+    }
+
+    handlePongReceived() {
+        this.state.lastPongReceived = Date.now();
+        if (this.state.pongTimeout) {
+            clearTimeout(this.state.pongTimeout);
+        }
+        this.updateConnectionStatus('online');
+    }
+
+    updateConnectionStatus(status) {
+        this.elements.connectionStatus.style.display = 'flex';
+        
+        if (status === 'online') {
+            this.elements.statusIndicator.className = 'status-indicator online';
+            this.elements.statusText.textContent = 'Online';
+        } else {
+            this.elements.statusIndicator.className = 'status-indicator offline';
+            this.elements.statusText.textContent = 'Offline';
         }
     }
 
@@ -549,6 +613,7 @@ class PeerApp {
 
             conn.on('open', () => {
                 console.log('User is online and connected');
+                this.startHeartbeat();
             });
 
             conn.on('data', data => {
@@ -566,6 +631,10 @@ class PeerApp {
                 } else if (data.type === 'delivered') {
                     console.log('Message delivered');
                     this.updateMessageDeliveryStatus(data.id);
+                } else if (data.type === 'ping') {
+                    conn.send({ type: 'pong' });
+                } else if (data.type === 'pong') {
+                    this.handlePongReceived();
                 } else {
                     const decodedMsg = decodeBase64(data);
                     this.appendChatMessage('Peer', decodedMsg);
@@ -574,6 +643,7 @@ class PeerApp {
 
             conn.on('close', () => {
                 console.log('User disconnected');
+                this.stopHeartbeat();
                 this.appendChatMessage('System', 'Chat ended.');
                 this.updateConnectedPeers(conn.peer, false);
                 this.setConnectedUI(false);

@@ -121,6 +121,47 @@ body {
     padding: 10px 16px;
 }
 
+.status-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+#connectedPeers {
+    font-size: 13px;
+    color: white;
+}
+
+#connectionStatus {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-indicator.online {
+    background-color: #25D366;
+    box-shadow: 0 0 5px #25D366;
+}
+
+.status-indicator.offline {
+    background-color: #ff4444;
+    box-shadow: 0 0 5px #ff4444;
+}
+
+#statusText {
+    color: white;
+    font-weight: 500;
+}
+
 .peer-id-section {
     display: flex;
     align-items: center;
