@@ -1,5 +1,24 @@
 
-const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+function mimeFromFileName(fileName, fallback) {
+    if (fallback && fallback !== 'application/octet-stream') return fallback;
+    const ext = (fileName.split('.').pop() || '').toLowerCase();
+    const map = {
+        mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', ogg: 'audio/ogg', flac: 'audio/flac',
+        aac: 'audio/aac', webm: 'audio/webm',
+        mp4: 'video/mp4', mov: 'video/quicktime', mkv: 'video/x-matroska', avi: 'video/x-msvideo',
+        pdf: 'application/pdf',
+        doc: 'application/msword',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        xls: 'application/vnd.ms-excel',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ppt: 'application/vnd.ms-powerpoint',
+        pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        txt: 'text/plain', csv: 'text/csv', rtf: 'application/rtf', odt: 'application/vnd.oasis.opendocument.text'
+    };
+    return map[ext] || fallback || 'application/octet-stream';
+}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -403,7 +422,10 @@ class PeerApp {
 
         const messageContent = document.createElement('div');
         const dataUrl = `data:${mimeType};base64,${base64Data}`;
-        const isImage = typeof mimeType === 'string' && mimeType.startsWith('image/');
+        const mt = typeof mimeType === 'string' ? mimeType : '';
+        const isImage = mt.startsWith('image/');
+        const isVideo = mt.startsWith('video/');
+        const isAudio = mt.startsWith('audio/');
 
         const nameEl = document.createElement('div');
         nameEl.className = 'chat-file-name';
@@ -416,6 +438,20 @@ class PeerApp {
             img.src = dataUrl;
             img.alt = fileName;
             messageContent.appendChild(img);
+        } else if (isVideo) {
+            const video = document.createElement('video');
+            video.className = 'chat-attachment-video';
+            video.controls = true;
+            video.preload = 'metadata';
+            video.src = dataUrl;
+            messageContent.appendChild(video);
+        } else if (isAudio) {
+            const audio = document.createElement('audio');
+            audio.className = 'chat-attachment-audio';
+            audio.controls = true;
+            audio.preload = 'metadata';
+            audio.src = dataUrl;
+            messageContent.appendChild(audio);
         }
 
         const downloadBtn = document.createElement('a');
@@ -467,13 +503,13 @@ class PeerApp {
             return;
         }
         if (file.size > MAX_ATTACHMENT_BYTES) {
-            showToast('File too large (max 4 MB)');
+            showToast('File too large (max 10 MB)');
             return;
         }
         try {
             const { base64, mime } = await this.readFileAsBase64(file);
             const messageId = `msg_${Date.now()}_${this.state.messageCounter++}`;
-            const mimeType = mime || file.type || 'application/octet-stream';
+            const mimeType = mimeFromFileName(file.name, mime || file.type || 'application/octet-stream');
             this.state.currentChatConn.send({
                 type: 'file',
                 id: messageId,
