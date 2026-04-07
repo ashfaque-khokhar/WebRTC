@@ -35,7 +35,8 @@ class PeerApp {
             connectedPeersSpan: document.getElementById('connectedPeers'),
             disconnectBtn: document.getElementById('disconnectBtn'),
             chatInputContainer: document.querySelector('.chat-input-container'),
-            newPeerId: document.getElementById('newPeerId')
+            newPeerId: document.getElementById('newPeerId'),
+            typingIndicator: document.getElementById('typingIndicator')
         };
 
         // App state
@@ -47,7 +48,8 @@ class PeerApp {
             videoEnabled: false,
             connectedPeers: [],
             pendingCall: null,
-            currentChatConn: null
+            currentChatConn: null,
+            typingTimeout: null
         };
 
         this.init();
@@ -233,19 +235,30 @@ class PeerApp {
 
         conn.on('open', () => {
             console.log('[Chat] Data connection opened.');
+            console.log('User is online and connected');
             this.setConnectedUI(true);
         });
 
-       // conn.on('data', data => this.appendChatMessage('Peer', data));
         conn.on('data', data => {
-            const decodedMsg = decodeBase64(data);
-            this.appendChatMessage('Peer', decodedMsg);
+            if (data.type === 'typing') {
+                console.log('User is typing...');
+                this.showTypingIndicator();
+            } else {
+                const decodedMsg = decodeBase64(data);
+                this.appendChatMessage('Peer', decodedMsg);
+            }
         });
+
         conn.on('close', () => {
+            console.log('User disconnected');
             this.appendChatMessage('System', 'Chat ended.');
             this.updateConnectedPeers(peerId, false);
             this.setConnectedUI(false);
             refreshPage();
+        });
+
+        conn.on('error', (err) => {
+            console.log('Connection error', err);
         });
     }
     appendChatMessage(sender, message) {
@@ -306,6 +319,27 @@ class PeerApp {
         this.state.currentChatConn.send(encodedMsg);
         this.appendChatMessage('You', msg);
         this.elements.chatInput.value = '';
+    }
+
+    showTypingIndicator() {
+        this.elements.typingIndicator.style.display = 'block';
+        
+        if (this.state.typingTimeout) {
+            clearTimeout(this.state.typingTimeout);
+        }
+        
+        this.state.typingTimeout = setTimeout(() => {
+            this.elements.typingIndicator.style.display = 'none';
+        }, 2000);
+    }
+
+    sendTypingIndicator() {
+        if (this.state.currentChatConn && this.state.currentChatConn.open) {
+            this.state.currentChatConn.send({
+                type: 'typing',
+                user: this.state.myPeerId
+            });
+        }
     }
 
 
@@ -448,16 +482,29 @@ class PeerApp {
             this.updateConnectedPeers(conn.peer, true);
             this.setConnectedUI(true);
 
-           // conn.on('data', data => this.appendChatMessage('Peer', data));
+            conn.on('open', () => {
+                console.log('User is online and connected');
+            });
+
             conn.on('data', data => {
-                const decodedMsg = decodeBase64(data);
-                this.appendChatMessage('Peer', decodedMsg);
+                if (data.type === 'typing') {
+                    console.log('User is typing...');
+                    this.showTypingIndicator();
+                } else {
+                    const decodedMsg = decodeBase64(data);
+                    this.appendChatMessage('Peer', decodedMsg);
+                }
             });
 
             conn.on('close', () => {
+                console.log('User disconnected');
                 this.appendChatMessage('System', 'Chat ended.');
                 this.updateConnectedPeers(conn.peer, false);
                 this.setConnectedUI(false);
+            });
+
+            conn.on('error', (err) => {
+                console.log('Connection error', err);
             });
         });
 
@@ -506,7 +553,11 @@ class PeerApp {
         // Chat events
         this.elements.sendChatButton.addEventListener('click', () => this.sendChatMessage());
         this.elements.chatInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter') this.sendChatMessage();
+            if (e.key === 'Enter') {
+                this.sendChatMessage();
+            } else {
+                this.sendTypingIndicator();
+            }
         });
 
         // Media controls
