@@ -1,4 +1,6 @@
 
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     new PeerApp();
@@ -43,7 +45,9 @@ class PeerApp {
             emojiPickerModal: document.getElementById('emojiPickerModal'),
             emojiPickerBtn: document.getElementById('emojiPickerBtn'),
             emojiPickerClose: document.getElementById('emojiPickerClose'),
-            emojiGrid: document.getElementById('emojiGrid')
+            emojiGrid: document.getElementById('emojiGrid'),
+            fileAttachmentInput: document.getElementById('fileAttachmentInput'),
+            attachFileBtn: document.getElementById('attachFileBtn')
         };
 
         // App state
@@ -278,6 +282,8 @@ class PeerApp {
                     type: 'seen',
                     messageId: data.id
                 });
+            } else if (data.type === 'file') {
+                this.handleIncomingFile(conn, data);
             } else if (data.type === 'delivered') {
                 console.log('Message delivered');
                 this.updateMessageDeliveryStatus(data.id);
@@ -356,6 +362,133 @@ class PeerApp {
         }
     }
 
+    readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result;
+                const commaIdx = dataUrl.indexOf(',');
+                const base64 = dataUrl.slice(commaIdx + 1);
+                const mimeMatch = dataUrl.match(/^data:([^;]*);/);
+                resolve({
+                    base64,
+                    mime: (mimeMatch && mimeMatch[1]) ? mimeMatch[1] : (file.type || 'application/octet-stream')
+                });
+            };
+            reader.onerror = () => reject(new Error('read failed'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    handleIncomingFile(conn, data) {
+        if (!data.id || !data.data) return;
+        const fileName = data.fileName || 'file';
+        const mimeType = data.mimeType || 'application/octet-stream';
+        this.appendAttachmentMessage('Peer', fileName, mimeType, data.data, data.id);
+        this.state.lastReceivedMessageId = data.id;
+        conn.send({ type: 'delivered', id: data.id });
+        conn.send({ type: 'seen', messageId: data.id });
+    }
+
+    appendAttachmentMessage(sender, fileName, mimeType, base64Data, messageId) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message');
+        if (messageId) msgDiv.dataset.messageId = messageId;
+
+        if (sender === 'You') {
+            msgDiv.classList.add('outgoing');
+        } else if (sender === 'Peer') {
+            msgDiv.classList.add('incoming');
+        }
+
+        const messageContent = document.createElement('div');
+        const dataUrl = `data:${mimeType};base64,${base64Data}`;
+        const isImage = typeof mimeType === 'string' && mimeType.startsWith('image/');
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'chat-file-name';
+        nameEl.textContent = fileName;
+        messageContent.appendChild(nameEl);
+
+        if (isImage) {
+            const img = document.createElement('img');
+            img.className = 'chat-attachment-img';
+            img.src = dataUrl;
+            img.alt = fileName;
+            messageContent.appendChild(img);
+        }
+
+        const downloadBtn = document.createElement('a');
+        downloadBtn.className = 'chat-download-btn';
+        downloadBtn.href = dataUrl;
+        downloadBtn.download = fileName;
+        downloadBtn.setAttribute('role', 'button');
+        const dlIcon = document.createElement('i');
+        dlIcon.className = 'fas fa-download';
+        downloadBtn.appendChild(dlIcon);
+        downloadBtn.appendChild(document.createTextNode(' Download'));
+        messageContent.appendChild(downloadBtn);
+
+        const metadata = document.createElement('span');
+        metadata.classList.add('metadata');
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const timeString = `${hours}:${minutes}`;
+        if (sender === 'You') {
+            metadata.innerHTML = `${timeString} <span class="ticks">✔</span>`;
+        } else {
+            metadata.innerHTML = timeString;
+        }
+
+        msgDiv.appendChild(messageContent);
+        msgDiv.appendChild(metadata);
+        this.elements.chatMessages.appendChild(msgDiv);
+        this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
+    }
+
+    queueDeliveryTimeout(messageId) {
+        const timeout = setTimeout(() => {
+            if (this.state.pendingMessages.has(messageId)) {
+                this.markMessageAsNotDelivered(messageId);
+                this.appendChatMessage('System', 'Message not delivered - Disconnected');
+            }
+        }, 5000);
+        this.state.deliveryTimeouts.set(messageId, timeout);
+    }
+
+    async sendFileAttachment(file) {
+        if (!this.state.currentChatConn || !this.state.currentChatConn.open) {
+            showToast('Connect to a peer first');
+            return;
+        }
+        if (!file || !file.size) {
+            showToast('Empty file');
+            return;
+        }
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+            showToast('File too large (max 4 MB)');
+            return;
+        }
+        try {
+            const { base64, mime } = await this.readFileAsBase64(file);
+            const messageId = `msg_${Date.now()}_${this.state.messageCounter++}`;
+            const mimeType = mime || file.type || 'application/octet-stream';
+            this.state.currentChatConn.send({
+                type: 'file',
+                id: messageId,
+                fileName: file.name,
+                mimeType,
+                data: base64
+            });
+            this.appendAttachmentMessage('You', file.name, mimeType, base64, messageId);
+            this.state.pendingMessages.set(messageId, file.name);
+            this.queueDeliveryTimeout(messageId);
+        } catch (err) {
+            console.error('[Chat] File send failed:', err);
+            showToast('Could not read or send file');
+        }
+    }
 
     sendChatMessage() {
         const msg = this.elements.chatInput.value.trim();
@@ -371,15 +504,7 @@ class PeerApp {
         
         this.appendChatMessage('You', msg, messageId);
         this.state.pendingMessages.set(messageId, msg);
-        
-        const timeout = setTimeout(() => {
-            if (this.state.pendingMessages.has(messageId)) {
-                this.markMessageAsNotDelivered(messageId);
-                this.appendChatMessage('System', 'Message not delivered - Disconnected');
-            }
-        }, 5000);
-        
-        this.state.deliveryTimeouts.set(messageId, timeout);
+        this.queueDeliveryTimeout(messageId);
         this.elements.chatInput.value = '';
     }
 
@@ -700,6 +825,8 @@ class PeerApp {
                         type: 'seen',
                         messageId: data.id
                     });
+                } else if (data.type === 'file') {
+                    this.handleIncomingFile(conn, data);
                 } else if (data.type === 'delivered') {
                     console.log('Message delivered');
                     this.updateMessageDeliveryStatus(data.id);
@@ -791,6 +918,19 @@ class PeerApp {
             const cell = e.target.closest('.emoji-cell');
             if (!cell || !cell.dataset.emoji) return;
             this.pickEmoji(cell.dataset.emoji);
+        });
+
+        this.elements.attachFileBtn.addEventListener('click', () => {
+            if (!this.state.currentChatConn || !this.state.currentChatConn.open) {
+                showToast('Connect to a peer first');
+                return;
+            }
+            this.elements.fileAttachmentInput.click();
+        });
+        this.elements.fileAttachmentInput.addEventListener('change', e => {
+            const file = e.target.files && e.target.files[0];
+            e.target.value = '';
+            if (file) this.sendFileAttachment(file);
         });
 
         // Media controls

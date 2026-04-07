@@ -299,6 +299,61 @@ canvas {
     margin-left: 5px;
 }
 
+.file-input-hidden {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.chat-attachment-img {
+    display: block;
+    max-width: 100%;
+    max-height: 220px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    object-fit: contain;
+}
+
+.chat-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    background-color: var(--wa-green);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.chat-download-btn:hover {
+    background-color: var(--wa-teal);
+    color: white;
+}
+
+.message.incoming .chat-download-btn {
+    background-color: #e8f5e9;
+    color: var(--wa-teal);
+}
+
+.message.incoming .chat-download-btn:hover {
+    background-color: #c8e6c9;
+    color: var(--wa-teal);
+}
+
+.chat-file-name {
+    font-size: 13px;
+    color: var(--wa-gray-text);
+    margin-bottom: 4px;
+}
+
 .chat-input-container {
     display: flex;
     align-items: center;
