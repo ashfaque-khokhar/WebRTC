@@ -409,28 +409,91 @@ canvas {
 }
 
 .start-call-section {
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background-color: white;
+    padding: 8px 12px;
+    background-color: #f0f2f5;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 1000;
-}
-
-.call-init {
-    display: flex;
-    gap: 8px;
+    border-top: 1px solid #e0e0e0;
 }
 
 .call-init.hide {
     display: none;
+}
+
+.connect-dialog-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.connect-dialog-overlay.active {
+    display: flex;
+}
+
+.connect-dialog {
+    background: white;
+    width: 100%;
+    max-width: 380px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    animation: popIn 0.2s ease;
+}
+
+@keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+.connect-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 20px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--wa-teal);
+}
+
+.connect-dialog-body {
+    padding: 18px 20px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.connect-dialog-hint {
+    font-size: 13px;
+    color: #888;
+}
+
+.connect-input {
+    width: 100%;
+    border: 1.5px solid #ddd;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.connect-input:focus {
+    border-color: var(--wa-green);
+}
+
+.connect-dialog-footer {
+    padding: 12px 20px 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .call-btn {

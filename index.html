@@ -86,14 +86,25 @@
                 
             </div>
 
-            <div class="start-call-section">
-                <div class="call-init" id="callInit">
-                    <input id="peerIdInput" class ="input-box" type="text" placeholder="Enter peer ID to connect" />
-                    <button class="call-btn" id="startCallButton">
-                        <i class="fas fa-plug"></i> Connect
-                    </button>
+            <!-- Connect dialog popup -->
+            <div class="connect-dialog-overlay" id="connectDialog">
+                <div class="connect-dialog">
+                    <div class="connect-dialog-header">
+                        <span>New Connection</span>
+                    </div>
+                    <div class="connect-dialog-body">
+                        <p class="connect-dialog-hint">Enter the peer ID of the person you want to connect with.</p>
+                        <input id="peerIdInput" class="connect-input" type="text" placeholder="Enter peer ID" />
+                    </div>
+                    <div class="connect-dialog-footer">
+                        <button class="call-btn" id="startCallButton">
+                            <i class="fas fa-plug"></i> Connect
+                        </button>
+                    </div>
                 </div>
+            </div>
 
+            <div class="start-call-section">
                 <div class="chat-input-container">
                     <button class="input-btn">
                         <i class="far fa-smile"></i>
@@ -102,13 +113,12 @@
                         <i class="fas fa-paperclip"></i>
                     </button>
                     <div class="chat-input-wrapper">
-                        <input id="chatInput" class ="input-box" type="text" placeholder="Type a message" />
+                        <input id="chatInput" class="input-box" type="text" placeholder="Type a message" />
                     </div>
                     <button class="input-btn" id="sendChatButton">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
-               
             </div>
         </div>
     </div>

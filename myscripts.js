@@ -20,7 +20,6 @@ class PeerApp {
             toggleAudioButton: document.getElementById('toggleAudioButton'),
             toggleVideoButton: document.getElementById('toggleVideoButton'),
 
-            callInit: document.getElementById('callInit'),
             callOptionsModal: document.getElementById('callOptionsModal'),
             optionChat: document.getElementById('optionChat'),
             optionVideo: document.getElementById('optionVideo'),
@@ -39,7 +38,8 @@ class PeerApp {
             typingIndicator: document.getElementById('typingIndicator'),
             connectionStatus: document.getElementById('connectionStatus'),
             statusIndicator: document.getElementById('statusIndicator'),
-            statusText: document.getElementById('statusText')
+            statusText: document.getElementById('statusText'),
+            connectDialog: document.getElementById('connectDialog')
         };
 
         // App state
@@ -73,6 +73,9 @@ class PeerApp {
         // Set initial UI state
         this.elements.myPeerIdSpan.textContent = this.state.myPeerId;
         this.setConnectedUI(false);
+        
+        // Show connect dialog on load
+        this.elements.connectDialog.classList.add('active');
 
         // Request initial audio stream
         this.getUserMedia({ video: true, audio: true })
@@ -122,19 +125,22 @@ class PeerApp {
         if (active) {
             this.elements.startCallButton.classList.add('disabled');
             this.elements.peerIdInput.classList.add('disabled');
-            this.elements.callInit.classList.add('hide');
         } else {
             this.elements.startCallButton.classList.remove('disabled');
             this.elements.peerIdInput.classList.remove('disabled');
-            this.elements.callInit.classList.remove('hide');
         }
     }
 
     setConnectedUI(connected) {
         this.elements.disconnectBtn.style.display = connected ? '' : 'none';
-        this.elements.chatInputContainer.style.display = connected ? '' : 'none';
-
         this.elements.endCallButton.style.display = connected ? '' : 'none';
+        this.elements.chatInputContainer.style.display = connected ? '' : 'none';
+        
+        if (connected) {
+            this.elements.connectDialog.classList.remove('active');
+        } else {
+            this.elements.connectDialog.classList.add('active');
+        }
     }
 
     // Call handling
@@ -691,6 +697,7 @@ class PeerApp {
                 this.elements.peerIdInput.focus();
                 return;
             }
+            this.elements.connectDialog.classList.remove('active');
             this.elements.callOptionsModal.dataset.peerId = peerId;
             this.elements.callOptionsModal.classList.add('active');
         });
