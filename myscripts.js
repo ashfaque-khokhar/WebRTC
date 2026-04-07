@@ -49,7 +49,10 @@ class PeerApp {
             connectedPeers: [],
             pendingCall: null,
             currentChatConn: null,
-            typingTimeout: null
+            typingTimeout: null,
+            messageCounter: 0,
+            pendingMessages: new Map(),
+            deliveryTimeouts: new Map()
         };
 
         this.init();
@@ -243,6 +246,17 @@ class PeerApp {
             if (data.type === 'typing') {
                 console.log('User is typing...');
                 this.showTypingIndicator();
+            } else if (data.type === 'message') {
+                const decodedMsg = decodeBase64(data.text);
+                this.appendChatMessage('Peer', decodedMsg, data.id);
+                
+                conn.send({
+                    type: 'delivered',
+                    id: data.id
+                });
+            } else if (data.type === 'delivered') {
+                console.log('Message delivered');
+                this.updateMessageDeliveryStatus(data.id);
             } else {
                 const decodedMsg = decodeBase64(data);
                 this.appendChatMessage('Peer', decodedMsg);
@@ -261,9 +275,13 @@ class PeerApp {
             console.log('Connection error', err);
         });
     }
-    appendChatMessage(sender, message) {
+    appendChatMessage(sender, message, messageId = null) {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message');
+        
+        if (messageId) {
+            msgDiv.dataset.messageId = messageId;
+        }
 
         if (sender === 'You') {
             msgDiv.classList.add('outgoing');
@@ -274,11 +292,9 @@ class PeerApp {
             msgDiv.style.color = '#888';
         }
 
-        // Create message content with optional ticks and time
         const messageContent = document.createElement('div');
         messageContent.textContent = message;
 
-        // Create metadata (time and ticks)
         const metadata = document.createElement('span');
         metadata.classList.add('metadata');
 
@@ -287,13 +303,11 @@ class PeerApp {
         const minutes = now.getMinutes().toString().padStart(2, '0');
         const timeString = `${hours}:${minutes}`;
         if (sender === 'You') {
-
-            metadata.innerHTML = `${timeString} <span class="ticks">✔✔</span>`; // double tick
+            metadata.innerHTML = `${timeString} <span class="ticks">✔</span>`;
         }
         if (sender === 'Peer')
         {
-            metadata.innerHTML = `${timeString}`; // double tick
-
+            metadata.innerHTML = `${timeString}`;
         }
 
         msgDiv.appendChild(messageContent);
@@ -315,10 +329,61 @@ class PeerApp {
         const msg = this.elements.chatInput.value.trim();
         if (!msg || !this.state.currentChatConn) return;
 
-        const encodedMsg = encodeBase64(msg);
-        this.state.currentChatConn.send(encodedMsg);
-        this.appendChatMessage('You', msg);
+        const messageId = `msg_${Date.now()}_${this.state.messageCounter++}`;
+        
+        this.state.currentChatConn.send({
+            type: 'message',
+            id: messageId,
+            text: encodeBase64(msg)
+        });
+        
+        this.appendChatMessage('You', msg, messageId);
+        this.state.pendingMessages.set(messageId, msg);
+        
+        const timeout = setTimeout(() => {
+            if (this.state.pendingMessages.has(messageId)) {
+                this.markMessageAsNotDelivered(messageId);
+                this.appendChatMessage('System', 'Message not delivered - Disconnected');
+            }
+        }, 5000);
+        
+        this.state.deliveryTimeouts.set(messageId, timeout);
         this.elements.chatInput.value = '';
+    }
+
+    updateMessageDeliveryStatus(messageId) {
+        const messageDiv = this.elements.chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageDiv) {
+            const ticksSpan = messageDiv.querySelector('.ticks');
+            if (ticksSpan) {
+                ticksSpan.innerHTML = '✔✔';
+            }
+        }
+        
+        if (this.state.deliveryTimeouts.has(messageId)) {
+            clearTimeout(this.state.deliveryTimeouts.get(messageId));
+            this.state.deliveryTimeouts.delete(messageId);
+        }
+        
+        this.state.pendingMessages.delete(messageId);
+    }
+
+    markMessageAsNotDelivered(messageId) {
+        const messageDiv = this.elements.chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageDiv) {
+            const ticksSpan = messageDiv.querySelector('.ticks');
+            if (ticksSpan) {
+                ticksSpan.innerHTML = '⚠️';
+                ticksSpan.style.color = '#ff4444';
+            }
+        }
+        
+        if (this.state.deliveryTimeouts.has(messageId)) {
+            clearTimeout(this.state.deliveryTimeouts.get(messageId));
+            this.state.deliveryTimeouts.delete(messageId);
+        }
+        
+        this.state.pendingMessages.delete(messageId);
     }
 
     showTypingIndicator() {
@@ -490,6 +555,17 @@ class PeerApp {
                 if (data.type === 'typing') {
                     console.log('User is typing...');
                     this.showTypingIndicator();
+                } else if (data.type === 'message') {
+                    const decodedMsg = decodeBase64(data.text);
+                    this.appendChatMessage('Peer', decodedMsg, data.id);
+                    
+                    conn.send({
+                        type: 'delivered',
+                        id: data.id
+                    });
+                } else if (data.type === 'delivered') {
+                    console.log('Message delivered');
+                    this.updateMessageDeliveryStatus(data.id);
                 } else {
                     const decodedMsg = decodeBase64(data);
                     this.appendChatMessage('Peer', decodedMsg);
