@@ -106,7 +106,7 @@
 
             <div class="start-call-section">
                 <div class="chat-input-container">
-                    <button class="input-btn">
+                    <button type="button" class="input-btn" id="emojiPickerBtn" title="Emoji">
                         <i class="far fa-smile"></i>
                     </button>
                     <button class="input-btn">
@@ -160,6 +160,38 @@
 
     <!-- Toast notification -->
     <div id="toast" class="toast" aria-live="polite">Connected!</div>
+
+    <div class="emoji-dialog-overlay" id="emojiPickerModal" aria-hidden="true">
+        <div class="emoji-dialog" role="dialog" aria-labelledby="emojiDialogTitle">
+            <div class="emoji-dialog-header">
+                <span id="emojiDialogTitle">Emoji</span>
+                <button type="button" class="emoji-dialog-close" id="emojiPickerClose" aria-label="Close">×</button>
+            </div>
+            <p class="emoji-dialog-hint">Tap to insert. If the message box is empty and you are connected, the emoji is sent right away.</p>
+            <div class="emoji-grid" id="emojiGrid">
+                <button type="button" class="emoji-cell" data-emoji="😀">😀</button>
+                <button type="button" class="emoji-cell" data-emoji="😂">😂</button>
+                <button type="button" class="emoji-cell" data-emoji="🥰">🥰</button>
+                <button type="button" class="emoji-cell" data-emoji="😍">😍</button>
+                <button type="button" class="emoji-cell" data-emoji="😘">😘</button>
+                <button type="button" class="emoji-cell" data-emoji="😎">😎</button>
+                <button type="button" class="emoji-cell" data-emoji="🤔">🤔</button>
+                <button type="button" class="emoji-cell" data-emoji="👍">👍</button>
+                <button type="button" class="emoji-cell" data-emoji="👎">👎</button>
+                <button type="button" class="emoji-cell" data-emoji="👏">👏</button>
+                <button type="button" class="emoji-cell" data-emoji="🙏">🙏</button>
+                <button type="button" class="emoji-cell" data-emoji="❤️">❤️</button>
+                <button type="button" class="emoji-cell" data-emoji="🔥">🔥</button>
+                <button type="button" class="emoji-cell" data-emoji="✨">✨</button>
+                <button type="button" class="emoji-cell" data-emoji="🎉">🎉</button>
+                <button type="button" class="emoji-cell" data-emoji="😢">😢</button>
+                <button type="button" class="emoji-cell" data-emoji="😮">😮</button>
+                <button type="button" class="emoji-cell" data-emoji="🤣">🤣</button>
+                <button type="button" class="emoji-cell" data-emoji="😴">😴</button>
+                <button type="button" class="emoji-cell" data-emoji="🤝">🤝</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
       <script src="myscripts.js"></script>

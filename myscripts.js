@@ -39,7 +39,11 @@ class PeerApp {
             connectionStatus: document.getElementById('connectionStatus'),
             statusIndicator: document.getElementById('statusIndicator'),
             statusText: document.getElementById('statusText'),
-            connectDialog: document.getElementById('connectDialog')
+            connectDialog: document.getElementById('connectDialog'),
+            emojiPickerModal: document.getElementById('emojiPickerModal'),
+            emojiPickerBtn: document.getElementById('emojiPickerBtn'),
+            emojiPickerClose: document.getElementById('emojiPickerClose'),
+            emojiGrid: document.getElementById('emojiGrid')
         };
 
         // App state
@@ -377,6 +381,41 @@ class PeerApp {
         
         this.state.deliveryTimeouts.set(messageId, timeout);
         this.elements.chatInput.value = '';
+    }
+
+    insertEmojiIntoChat(emoji) {
+        const input = this.elements.chatInput;
+        const start = typeof input.selectionStart === 'number' ? input.selectionStart : input.value.length;
+        const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : input.value.length;
+        input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+        const pos = start + emoji.length;
+        input.focus();
+        requestAnimationFrame(() => {
+            try {
+                input.setSelectionRange(pos, pos);
+            } catch (e) { /* ignore */ }
+        });
+    }
+
+    openEmojiPicker() {
+        this.elements.emojiPickerModal.classList.add('active');
+        this.elements.emojiPickerModal.setAttribute('aria-hidden', 'false');
+    }
+
+    closeEmojiPicker() {
+        this.elements.emojiPickerModal.classList.remove('active');
+        this.elements.emojiPickerModal.setAttribute('aria-hidden', 'true');
+    }
+
+    pickEmoji(emoji) {
+        const draft = this.elements.chatInput.value.trim();
+        if (this.state.currentChatConn && !draft) {
+            this.elements.chatInput.value = emoji;
+            this.sendChatMessage();
+        } else {
+            this.insertEmojiIntoChat(emoji);
+        }
+        this.closeEmojiPicker();
     }
 
     updateMessageDeliveryStatus(messageId) {
@@ -741,6 +780,17 @@ class PeerApp {
             } else {
                 this.sendTypingIndicator();
             }
+        });
+
+        this.elements.emojiPickerBtn.addEventListener('click', () => this.openEmojiPicker());
+        this.elements.emojiPickerClose.addEventListener('click', () => this.closeEmojiPicker());
+        this.elements.emojiPickerModal.addEventListener('click', e => {
+            if (e.target === this.elements.emojiPickerModal) this.closeEmojiPicker();
+        });
+        this.elements.emojiGrid.addEventListener('click', e => {
+            const cell = e.target.closest('.emoji-cell');
+            if (!cell || !cell.dataset.emoji) return;
+            this.pickEmoji(cell.dataset.emoji);
         });
 
         // Media controls
