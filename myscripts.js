@@ -58,7 +58,8 @@ class PeerApp {
             deliveryTimeouts: new Map(),
             pingInterval: null,
             pongTimeout: null,
-            lastPongReceived: null
+            lastPongReceived: null,
+            lastReceivedMessageId: null
         };
 
         this.init();
@@ -256,14 +257,23 @@ class PeerApp {
             } else if (data.type === 'message') {
                 const decodedMsg = decodeBase64(data.text);
                 this.appendChatMessage('Peer', decodedMsg, data.id);
+                this.state.lastReceivedMessageId = data.id;
                 
                 conn.send({
                     type: 'delivered',
                     id: data.id
                 });
+                
+                conn.send({
+                    type: 'seen',
+                    messageId: data.id
+                });
             } else if (data.type === 'delivered') {
                 console.log('Message delivered');
                 this.updateMessageDeliveryStatus(data.id);
+            } else if (data.type === 'seen') {
+                console.log('Message seen');
+                this.updateMessageSeenStatus(data.messageId);
             } else if (data.type === 'ping') {
                 conn.send({ type: 'pong' });
             } else if (data.type === 'pong') {
@@ -396,6 +406,17 @@ class PeerApp {
         }
         
         this.state.pendingMessages.delete(messageId);
+    }
+
+    updateMessageSeenStatus(messageId) {
+        const messageDiv = this.elements.chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageDiv) {
+            const ticksSpan = messageDiv.querySelector('.ticks');
+            if (ticksSpan) {
+                ticksSpan.innerHTML = '✔✔';
+                ticksSpan.style.color = '#34B7F1';
+            }
+        }
     }
 
     showTypingIndicator() {
@@ -623,14 +644,23 @@ class PeerApp {
                 } else if (data.type === 'message') {
                     const decodedMsg = decodeBase64(data.text);
                     this.appendChatMessage('Peer', decodedMsg, data.id);
+                    this.state.lastReceivedMessageId = data.id;
                     
                     conn.send({
                         type: 'delivered',
                         id: data.id
                     });
+                    
+                    conn.send({
+                        type: 'seen',
+                        messageId: data.id
+                    });
                 } else if (data.type === 'delivered') {
                     console.log('Message delivered');
                     this.updateMessageDeliveryStatus(data.id);
+                } else if (data.type === 'seen') {
+                    console.log('Message seen');
+                    this.updateMessageSeenStatus(data.messageId);
                 } else if (data.type === 'ping') {
                     conn.send({ type: 'pong' });
                 } else if (data.type === 'pong') {
