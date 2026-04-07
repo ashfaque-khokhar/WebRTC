@@ -733,9 +733,31 @@ function refreshPage() {
   }
 
   // Utility functions
-  function generateRandomPeerId() {
+  function generateRandomPeerId1() {
       return Math.floor(1000 + Math.random() * 9000).toString();
   }
+
+  /*
+  Total Possible IDs
+    Characters:
+        26 uppercase
+        26 lowercase
+        10 numbers
+        2 symbols (- _)
+        --------------
+        64 characters
+    Possible combinations with length = 8:
+    64^8 = 281,474,976,710,656 =~281 trillion IDs
+  */
+
+  function generateRandomPeerId(length = 8) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrstuvwxyz_0123456789";
+    const array = new Uint8Array(length);
+    
+    crypto.getRandomValues(array);
+
+    return Array.from(array, x => chars[x % chars.length]).join('');
+}
 
   function showToast(message, duration = 2000) {
       const toast = document.getElementById('toast');
